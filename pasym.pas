@@ -1,0 +1,3 @@
+program pasym;
+begin
+end.
