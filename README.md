@@ -13,4 +13,10 @@ fpc pasym.fpc
 ./pasym
 ```
 
+By defautl, pasym reads the file `manifest.pasym`. You can provide a custom path as an argument.
+
+```
+./pasym <manifest_file>
+```
+
 [GNU Stow]: https://www.gnu.org/software/stow/
