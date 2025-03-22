@@ -15,7 +15,7 @@ fpc pasym.fpc
 
 By defautl, pasym reads the file `manifest.pasym`. You can provide a custom path as an argument.
 
-```
+``` console
 ./pasym <manifest_file>
 ```
 
