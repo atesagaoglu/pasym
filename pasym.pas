@@ -17,6 +17,7 @@ begin
 
     flagDry := false;
     
+    // TODO: Implement a better parsing algorithm and add support for chaining
     if ParamCount > 0 then
     begin
         for i := 1 to ParamCount do
@@ -72,6 +73,7 @@ begin
         if not flagDry then
             // for some reason, do this conversion
             if (fpSymlink(PChar(AnsiString(source)), PChar(AnsiString(target)))) < 0 then
+            begin
                 Writeln('Error occured during linking ', source, ' to ', target);
                 case FpGeterrno of
                     ESysENOENT:
@@ -88,6 +90,7 @@ begin
                     ESysEACCESS: Writeln('Write access denied at target path ', target);
                     // TODO: Handle other errors properly
                     ESysENOTDIR: Writeln('ENOTDIR')
+            end;
     end;
     Close(manifestFile);
 end.
