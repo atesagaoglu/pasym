@@ -16,21 +16,29 @@ fpc pasym.fpc
 By default, pasym reads the file `manifest.pasym`. You can provide a custom path as an argument.
 
 ``` console
-./pasym [manifest_file] [options...]
+./pasym [options...] [name] [manifest_file]
 ```
 
 # Manifest File Format
 
 - Manifest file is parsed line by line.
-- Each line should state a source and a target.
-- pasym parses lines in manifest file by `->`. Left side is the file/directory to be linked and right side is the target path.
+- Each line should state a name, source and a target.
 
 ```
-<source> -> <target>
+<name>: <source> -> <target>
 ```
 
 # Options
-- -d/--dry: pasym runs in dry mode, not creating links.
+- -d/--dry: pasym runs in dry mode, not creating links. Can be used to confirm paths.
+- -o/--only: Only link specific entries in manifest file. Requires a [name] argument immediatly after. Multiple entries can be specified using commas:`nvim,kitty,polybar`
+
+``` console
+# short form, one entry
+./pasym -o nvim
+
+# long form, multiple entries with custom manifest fiel
+./pasym --only nvim,kitty,polybar manifest_file
+```
 
 # Feature Plans
 - `Partial linking` User might want to link only certain files in manifest file.
