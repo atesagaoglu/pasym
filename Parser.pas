@@ -10,9 +10,12 @@ type
         only: boolean;
         filename: string;
         name: string;
+        printOpts: boolean;
     end;
 
 function ParseArgs: TArgs;
+procedure PrintArgs(args: TArgs);
+procedure PrintHelp;
 
 implementation
 
@@ -36,7 +39,9 @@ begin
         arg := ParamStr(i);
         if Copy(arg, 1, 2) = '--' then // long form
         begin
-            if arg = '--dry' then Result.dry := true
+            if arg = '--help' then PrintHelp()
+            else if arg = '--dry' then Result.dry := true
+            else if arg = '--print-opts' then Result.printOpts := true
             else if arg = '--only' then
             begin
                 // name must appear directly after --only
@@ -62,7 +67,6 @@ begin
         begin
             for j := 2 to Length(arg) do
             begin
-                Writeln('Looking: ', arg[j]);
                 case arg[j] of
                     'd': Result.dry := true;
                     'o':
@@ -107,4 +111,30 @@ begin
     end;
 end;
 
+procedure PrintArgs(args: TArgs);
+begin
+    Writeln('dry: ', BoolToStr(args.dry, True));
+    Writeln('only: ', BoolToStr(args.only, True));
+    Writeln('printOpts: ', BoolToStr(args.PrintOpts, True));
+    Writeln('name: ', args.name);
+    Writeln('filename: ', args.filename);
+end;
+
+function PadRight(s: String; width: Integer): String;
+begin
+    if Length(s) < width then
+        PadRight := s + StringOfChar(' ', width - Length(s))
+    else
+        PadRight := s;
+end;
+
+procedure PrintHelp;
+begin
+    Writeln(PadRight('Usage:', 20), 'pasym [options...] [name] [manifest_file]');
+    Writeln(PadRight('-d/--dry', 20), 'Run in dry mode');
+    Writeln(PadRight('-o/--only', 20), 'Link only given entries. Must be followed with [name]');
+    Writeln(PadRight('--print-opts', 20), 'Print given arguments.');
+    Writeln(PadRight('--help', 20), 'Print help menu');
+    Halt(1);
+end;
 end.
