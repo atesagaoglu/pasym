@@ -1,51 +1,35 @@
 program pasym;
+{$mode objfpc}
 uses
+    Parser,
     SysUtils,
     BaseUnix,
     Errors;
 var
-    fileName: string;
     manifestFile: textFile;
     line: string;
     source: string;
     target: string;
+    name: string;
     delimit: smallint;
-    i: integer;
+    delimitName: smallint;
+    err: longint;
 
-    flagDry: boolean;
+    args: TArgs;
+
 begin
 
-    flagDry := false;
+    args := ParseArgs;
+
+    if args.dry then Writeln('pasym running in dry mode.');
     
-    // TODO: Implement a better parsing algorithm and add support for chaining
-    if ParamCount > 0 then
+    if not FileExists(args.fileName) then
     begin
-        for i := 1 to ParamCount do
-        begin
-            // Check if the first argument is the file name or not
-            if (i = 1) 
-                and (Length(ParamStr(i)) > 0)
-                and (ParamStr(i)[1] <> '-') then filename := ParamStr(1);
-            if (ParamStr(i) = '--dry') or (ParamStr(i) = '-d') then flagDry := true;
-        end;
-    end;
-
-    // Default file name
-    if fileName = '' then
-    begin
-        fileName := 'manifest.pasym';
-    end;
-
-    // Writeln('filename -> ', fileName);
-    if flagDry then Writeln('Running in dry mode');
-
-    if not FileExists(fileName) then
-    begin
-        Writeln('Manifest file "', fileName, '" does not exist.');
+        Writeln('Manifest file "', args.fileName, '" does not exist.');
         Exit();
     end;
 
-    Assign(manifestFile, fileName);
+    Assign(manifestFile, args.fileName);
     Reset(manifestFile);
 
     line := '';
@@ -55,42 +39,51 @@ begin
     while not eof(manifestFile) and (line <> ' ') do
     begin
         Readln(manifestFile, line);
-        Writeln(line);
+        delimitName := Pos(':', line);
         delimit := Pos('->', line);
 
         // start and end are inclusive
-        source := Copy(line, 1, delimit-1); // from start to arrow
-        target := Copy(line, delimit+2, Length(line)); // from after arrow to end
+        name := Copy(line, 1, delimitName - 1);
+        source := Copy(line, delimitName + 1, (delimit - delimitName - 1));
+        target := Copy(line, delimit+2, Length(line));
 
         // don't forget to expand to absolute paths
+        name := Trim(name);
         source := ExpandFileName(Trim(source));
         target := ExpandFileName(Trim(target));
 
+        {$IFDEF DEBUG}
+        Writeln(line);
+        Writeln('name: ', name);
         Writeln('source: ', source);
         Writeln('target: ', target);
         Writeln();
+        {$ENDIF}
 
-        if not flagDry then
+
+        if not args.dry then
+        begin
             // for some reason, do this conversion
             if (fpSymlink(PChar(AnsiString(source)), PChar(AnsiString(target)))) < 0 then
             begin
                 Writeln('Error occured during linking ', source, ' to ', target);
-                case FpGeterrno of
-                    ESysENOENT:
+                err := FpGeterrno;
+                
+                if (err = ESysENOENT) then
+                begin
+                    if not FileExists(source) then
                     begin
-                        if not FileExists(source) then
-                        begin
-                            Writeln('Source file ', source, ' does not exist.');
-                        end
-                        else
-                            Writeln('Target path ', target, ' is not valid.');
-                        end;
-                    end;
-
-                    ESysEACCESS: Writeln('Write access denied at target path ', target);
-                    // TODO: Handle other errors properly
-                    ESysENOTDIR: Writeln('ENOTDIR')
+                        Writeln('Source file ', source, ' does not exist.');
+                    end
+                    else
+                        Writeln('Target path ', target, ' is not valid.');
+                    end
+                else if (err = ESysEACCES) then
+                    Writeln('Write access denied at target path ', target)
+                else if (err = ESysENOTDIR) then
+                    Writeln('ENOTDIR');
             end;
+        end;
     end;
     Close(manifestFile);
 end.
