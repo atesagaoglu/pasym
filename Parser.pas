@@ -9,7 +9,8 @@ type
         dry: boolean;
         only: boolean;
         filename: string;
-        name: string;
+        nameRaw: string;
+        names: array of AnsiString;
         printOpts: boolean;
     end;
 
@@ -20,7 +21,8 @@ procedure PrintHelp;
 implementation
 
 uses
-    SysUtils;
+    SysUtils,
+    StrUtils;
 
 function ParseArgs: TArgs;
 var
@@ -29,7 +31,7 @@ var
 begin
     Result.dry := false;
     Result.only := false;
-    Result.name := '';
+    Result.nameRaw := '';
     Result.filename := 'manifest.pasym';
 
     i := 1;
@@ -53,7 +55,7 @@ begin
                     Halt(1);
                 end;
                 
-                Result.name := ParamStr(i);
+                Result.nameRaw := ParamStr(i);
                 Inc(i);
                 if i <= ParamCount then Result.filename := ParamStr(i);
             end
@@ -84,7 +86,7 @@ begin
                                 Writeln('Missing name after -o');
                                 Halt(1);
                             end;
-                            Result.name := ParamStr(i);
+                            Result.nameRaw := ParamStr(i);
                             Inc(i);
                             if i <= ParamCount then Result.filename := ParamStr(i);
                             break;
@@ -104,11 +106,14 @@ begin
         Inc(i);
     end;
 
-    if (not Result.only) and (Result.name <> '') then
+    if (not Result.only) and (Result.nameRaw <> '') then
     begin
       Writeln('Name given without -o/--only');
       Halt(1);
     end;
+
+    // TODO: Check duplicate name entries
+    Result.names := SplitString(Result.nameRaw, ',');
 end;
 
 procedure PrintArgs(args: TArgs);
@@ -116,7 +121,7 @@ begin
     Writeln('dry: ', BoolToStr(args.dry, True));
     Writeln('only: ', BoolToStr(args.only, True));
     Writeln('printOpts: ', BoolToStr(args.PrintOpts, True));
-    Writeln('name: ', args.name);
+    Writeln('name: ', args.nameRaw);
     Writeln('filename: ', args.filename);
 end;
 
