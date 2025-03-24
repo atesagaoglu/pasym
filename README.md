@@ -9,7 +9,7 @@ If you happen to stumble upon this, please use it with caution.
 # Quick Start
 
 ``` console
-fpc pasym.fpc
+make
 ./pasym
 ```
 
