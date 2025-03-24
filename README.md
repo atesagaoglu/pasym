@@ -40,8 +40,8 @@ By default, pasym reads the file `manifest.pasym`. You can provide a custom path
 ./pasym --only nvim,kitty,polybar manifest_file
 ```
 
-# Feature Plans
-- `Partial linking` User might want to link only certain files in manifest file.
+# Future Plans
+- Handle duplicate naming.
 - `Link removal` pasym should be able to work in reverse and remove the links it created. This should also support partial removal.
 
 [GNU Stow]: https://www.gnu.org/software/stow/
