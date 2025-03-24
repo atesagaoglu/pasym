@@ -1,5 +1,5 @@
 PROGRAM = pasym
-UNITS = Parser
+UNITS = Parser ArrayUtil
 
 FPCFLAGS = -Fu.
 

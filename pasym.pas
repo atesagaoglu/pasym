@@ -2,12 +2,14 @@ program pasym;
 {$mode objfpc}
 uses
     Parser,
+    ArrayUtil,
     SysUtils,
     BaseUnix,
     Errors;
 var
     manifestFile: textFile;
     line: string;
+    lineNumber: word;
     source: string;
     target: string;
     name: string;
@@ -16,6 +18,33 @@ var
     err: longint;
 
     args: TArgs;
+
+procedure Link(source, target: string);
+begin
+    if not args.dry then
+    begin
+        // for some reason, do this conversion
+        if (fpSymlink(PChar(AnsiString(source)), PChar(AnsiString(target)))) < 0 then
+        begin
+            Writeln('Error occured during linking ', source, ' to ', target);
+            err := FpGeterrno;
+            
+            if (err = ESysENOENT) then
+            begin
+                if not FileExists(source) then
+                begin
+                    Writeln('Source file ', source, ' does not exist.');
+                end
+                else
+                    Writeln('Target path ', target, ' is not valid.');
+                end
+            else if (err = ESysEACCES) then
+                Writeln('Write access denied at target path ', target)
+            else if (err = ESysENOTDIR) then
+                Writeln('ENOTDIR');
+        end;
+    end;
+end;
 
 begin
 
@@ -33,14 +62,30 @@ begin
     Reset(manifestFile);
 
     line := '';
+    lineNumber := 0;
 
     // TODO: Reformat this to reduce indentation
     // TODO: Allow partial linking
     while not eof(manifestFile) and (line <> ' ') do
     begin
+        Inc(lineNumber);
+
         Readln(manifestFile, line);
         delimitName := Pos(':', line);
         delimit := Pos('->', line);
+
+        if delimitName = 0 then
+        begin
+            Writeln('Name not found at line: ', lineNumber);
+            Writeln(line);
+            Halt(1);
+        end
+        else if delimit = 0 then
+        begin
+            Writeln('Target not at line: ', lineNumber);
+            Writeln(line);
+            Halt(1);
+        end;
 
         // start and end are inclusive
         name := Copy(line, 1, delimitName - 1);
@@ -61,29 +106,17 @@ begin
         {$ENDIF}
 
 
-        if not args.dry then
+        if args.only then
         begin
-            // for some reason, do this conversion
-            if (fpSymlink(PChar(AnsiString(source)), PChar(AnsiString(target)))) < 0 then
+            // TODO: Handle duplicate name entries
+            if ArrayIncludes(args.names, name) >= 0 then
             begin
-                Writeln('Error occured during linking ', source, ' to ', target);
-                err := FpGeterrno;
-                
-                if (err = ESysENOENT) then
-                begin
-                    if not FileExists(source) then
-                    begin
-                        Writeln('Source file ', source, ' does not exist.');
-                    end
-                    else
-                        Writeln('Target path ', target, ' is not valid.');
-                    end
-                else if (err = ESysEACCES) then
-                    Writeln('Write access denied at target path ', target)
-                else if (err = ESysENOTDIR) then
-                    Writeln('ENOTDIR');
+                Link(source, target);
+                continue;
             end;
-        end;
+        end
+        else
+            Link(source, target);
     end;
     Close(manifestFile);
 end.
